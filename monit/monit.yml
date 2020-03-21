@@ -1,0 +1,22 @@
+---
+- hosts: tag_Group_cluster
+  user: ubuntu
+  become: yes
+  become_method: sudo
+  gather_facts: False
+  tasks:
+    - name: Install python   
+      raw: test -e /usr/bin/python || (apt -y update && apt install -y python-simplejson)
+    - name: install monit
+      apt: name=monit state=present update_cache=yes
+
+    - name: monitor splunk by monit
+      shell: echo "check process splunk with pidfile /opt/splunk/var/run/splunk/splunkd.pid" >> /etc/monit/monitrc ; echo start program = "\"/opt/splunk/bin/splunk start\"" >> /etc/monit/monitrc ; echo stop program = "\"/opt/splunk/bin/splunk stop\"" >> /etc/monit/monitrc
+
+    - name: check syntanx of monitrc file
+      shell: sudo monit -t
+      ignore_errors: True
+
+    - name: restart monit
+      shell: monit -I restart
+      ignore_errors: True

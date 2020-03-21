@@ -1,0 +1,26 @@
+---
+- hosts: tag_Name_Application
+  user: ubuntu
+  become: yes
+  become_method: sudo
+  gather_facts: False
+  tasks:
+    - name: install python
+      raw: test -e /usr/bin/python || (apt -y update && apt install -y python-simplejson)
+      
+    - name: install Apache
+      apt: name={{item}} state=present update_cache=yes
+      with_items:
+        apache2
+      
+    - name: ensure apache2 started
+      service: name=apache2 state=started enabled=yes
+
+    - name: remove default index.html
+      shell: sudo rm -rf /var/www/html/index.html
+      
+    - name: Clone from git
+      git:
+        repo: 'https://github.com/sanketbhimani/Felicific-16.git'
+        dest: /var/www/html/
+        force: yes

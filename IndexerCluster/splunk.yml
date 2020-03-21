@@ -1,0 +1,43 @@
+---
+  - hosts: tag_Group_cluster
+    become: yes
+    user: ubuntu
+    become_method: sudo
+    gather_facts: False
+    tasks:
+    - name: Install python   
+      raw: test -e /usr/bin/python || (apt -y update && apt install -y python-simplejson)
+
+    #- name: debug ansible facts
+    #  debug:
+    #    msg: "{{ hostvars }}"
+
+    - name: Download splunk installation file
+      get_url: 
+        url: https://s3.amazonaws.com/dhruvalsharma/splunk-7.2.3-06d57c595b80-linux-2.6-amd64.deb
+        dest: /tmp/splunk.deb
+
+    - name: Install splunk
+      tags:
+       - install
+      apt: deb=/tmp/splunk.deb
+
+    - name: Download user-seed.conf
+      get_url:
+        url: https://s3.amazonaws.com/dhruvalsharma/user-seed.conf
+        dest: /opt/splunk/etc/system/local/user-seed.conf
+
+    - name: Accept license
+      tags:
+       - install
+      shell: /opt/splunk/bin/splunk start --accept-license --no-prompt
+
+    - name: Enable boot start
+      tags:
+       - install
+      shell: /opt/splunk/bin/splunk enable boot-start
+      ignore_errors: yes
+
+  - import_playbook: build.yml
+  - import_playbook: receiver.yml
+  - import_playbook: forwarder.yml
